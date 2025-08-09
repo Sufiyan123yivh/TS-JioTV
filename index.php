@@ -3,7 +3,14 @@
 // * Licensed under MIT (https://github.com/mitthu786/TS-JioTV/blob/main/LICENSE)
 // * Created By : TechieSneh
 
-error_reporting(0);
+// Enable error reporting in development
+if ($_SERVER['APP_ENV'] === 'development') {
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+} else {
+    error_reporting(0);
+}
+
 include "app/functions.php";
 
 $file_path = __DIR__ . '/app/assets/data/credskey.jtv';
@@ -12,13 +19,11 @@ $isApache = isApache();
 
 if ($file_exists) {
     $user_data = getUserData();
-    $name = $user_data['name'];
-    $mobile = $user_data['mobile'];
-    $exp_date_time = $user_data['exp_date_time'];
+    $name = htmlspecialchars($user_data['name']);
+    $mobile = htmlspecialchars($user_data['mobile']);
+    $exp_date_time = htmlspecialchars($user_data['exp_date_time']);
 }
-
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -30,6 +35,7 @@ if ($file_exists) {
     <meta name="description" content="ENJOY FREE LIVE JIOTV">
     <meta name="keywords" content="JIOTV, LIVETV, SPORTS, MOVIES, MUSIC">
     <meta name="author" content="Techie Sneh">
+
     <!-- Tailwind CSS -->
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <!-- AOS Animation -->
@@ -67,31 +73,27 @@ if ($file_exists) {
 </head>
 
 <body class="bg-gray-900 text-gray-100">
+
     <header class="bg-gray-800 shadow-xl">
         <div class="container mx-auto flex justify-between items-center p-4">
             <div data-aos="fade-right">
                 <img src="https://ik.imagekit.io/techiesneh/tv_logo/jtv-plus_TMaGGk6N0.png" alt="JIOTV+" class="h-12">
             </div>
-            <!-- In Header Section -->
             <div id="userButtons" class="flex gap-2" data-aos="fade-left">
-                <button class="p-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg transition-all group relative" id="loginButton">
+                <button class="p-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg transition-all group relative" id="loginButton" aria-label="Login">
                     <span class="iconify text-xl" data-icon="mdi:account"></span>
-                    <span class="sr-only">Login</span>
                 </button>
 
-                <button class="p-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg transition-all group relative" id="refreshButton">
+                <button class="p-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg transition-all group relative" id="refreshButton" aria-label="Refresh">
                     <span class="iconify text-xl" data-icon="mdi:reload"></span>
-                    <span class="sr-only">Refresh</span>
                 </button>
 
-                <button class="p-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg transition-all group relative" id="logoutButton">
+                <button class="p-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg transition-all group relative" id="logoutButton" aria-label="Logout">
                     <span class="iconify text-xl" data-icon="mdi:logout"></span>
-                    <span class="sr-only">Logout</span>
                 </button>
 
-                <button class="p-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg transition-all group relative" id="PlayListButton">
+                <button class="p-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg transition-all group relative" id="PlayListButton" aria-label="Playlist">
                     <span class="iconify text-xl" data-icon="mdi:playlist-music"></span>
-                    <span class="sr-only">Playlist</span>
                 </button>
             </div>
         </div>
@@ -105,6 +107,119 @@ if ($file_exists) {
                     <option value="">📺 CONTENT</option>
                     <option value="n">🔴 Live TV</option>
                     <option value="y">⏳ Catchup</option>
+                </select>
+                <select id="genreFilter" class="p-3 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 flex-1 min-w-[200px]">
+                    <!-- Genre options -->
+                </select>
+                <select id="langFilter" class="p-3 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 flex-1 min-w-[200px]">
+                    <!-- Language options -->
+                </select>
+            </div>
+        </div>
+
+        <div id="charactersList" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"></div>
+    </main>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="hidden fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm flex items-center justify-center p-4" aria-labelledby="loginModalTitle" aria-hidden="true">
+        <div class="bg-gray-800 rounded-xl p-6 max-w-md w-full border border-gray-700 transform transition-all" data-aos="zoom-in">
+            <?php if ($file_exists): ?>
+                <h2 class="text-2xl font-bold mb-4 gradient-text" id="loginModalTitle">👤 User Details</h2>
+                <div class="mb-4">
+                    <p class="text-gray-400">Logged in as:</p>
+                    <p class="text-gray-100 font-semibold">👦🏻 <?php echo $name; ?></p>
+                    <p class="text-gray-100 font-semibold">📱 <?php echo $mobile; ?></p><br />
+                    <p class="text-gray-100 font-semibold">🎫 Token Expire at : <?php echo $exp_date_time; ?></p>
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button class="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg transition-colors" onclick="performRefresh()">
+                        <span class="iconify text-xl" data-icon="mdi:reload"></span>
+                    </button>
+                    <button class="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors" id="closeModal">Close</button>
+                </div>
+            <?php else: ?>
+                <h2 class="text-2xl font-bold mb-4 gradient-text">🔐 Secure Login</h2>
+                <p class="text-gray-400 mb-6">Access premium content with your credentials</p>
+                <div class="flex justify-end gap-2">
+                    <a href="app/login" class="px-6 py-2 bg-pink-600 hover:bg-pink-700 rounded-lg transition-colors">Continue</a>
+                    <button class="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors" id="closeModal">Close</button>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <!-- LogOut Modal -->
+    <div id="logoutModal" class="hidden fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm flex items-center justify-center p-4" aria-labelledby="logoutModalTitle" aria-hidden="true">
+        <div class="bg-gray-800 rounded-xl p-6 max-w-md w-full border border-gray-700 transform transition-all" data-aos="zoom-in">
+            <h2 class="text-2xl font-bold mb-4 gradient-text" id="logoutModalTitle">🚪 Logout</h2>
+            <p class="text-gray-400 mb-6">Are you sure you want to log out?</p>
+            <div class="flex justify-end gap-2">
+                <button class="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg transition-colors" id="confirmLogout">
+                    Confirm Logout
+                </button>
+                <button class="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors" id="closeModal">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-gray-400 p-4">
+        <div class="container mx-auto text-center">
+            <p>&copy; 2025 Techie Sneh | All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Iconify Library -->
+    <script src="https://code.iconify.design/2/2.1.2/iconify.min.js"></script>
+    <!-- LazySizes Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lazysizes/5.3.2/lazysizes.min.js" async></script>
+    <!-- AOS Animation Library -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+
+    <!-- Custom Scripts -->
+    <script>
+        // Initialize animations
+        AOS.init({
+            duration: 800,
+            easing: 'ease-out-quad',
+            once: false
+        });
+
+        // Open Login Modal
+        document.getElementById('loginButton').addEventListener('click', function() {
+            document.getElementById('loginModal').classList.remove('hidden');
+        });
+
+        // Close Modal
+        document.getElementById('closeModal').addEventListener('click', function() {
+            document.getElementById('loginModal').classList.add('hidden');
+            document.getElementById('logoutModal').classList.add('hidden');
+        });
+
+        // Handle Refresh
+        function performRefresh() {
+            location.reload();
+        }
+
+        // Handle Logout
+        document.getElementById('logoutButton').addEventListener('click', function() {
+            document.getElementById('logoutModal').classList.remove('hidden');
+        });
+
+        // Confirm Logout
+        document.getElementById('confirmLogout').addEventListener('click', function() {
+            window.location.href = 'app/logout'; // Replace with your logout logic
+        });
+
+        // Search Filter (Example)
+        document.getElementById('searchBar').addEventListener('input', function() {
+            let searchQuery = this.value.toLowerCase();
+            // Add search logic to filter characters based on input query
+        });
+    </script>
+</body>
+
+</html>
                 </select>
                 <select id="genreFilter" class="p-3 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 flex-1 min-w-[200px]">
                     <!-- Genre options -->
@@ -241,5 +356,6 @@ if ($file_exists) {
         });
     </script>
 </body>
+
 
 </html>
